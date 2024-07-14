@@ -1,7 +1,7 @@
-##################################
-#       CORS Vulnerabilities     #
+###################################
+#       CORS Vulnerabilities      #
 #   1st Lab in Burp Suite Academy #
-##################################
+###################################
 
 ######## Add Origin Header to Burp in /accountDetails ########
 
